@@ -1,30 +1,63 @@
 'use client';
 
- // any component that uses useAuth needs this because if a component directly imports useAuth, it needs to be a client component since useAuth uses React hooks.
-
-import { Button } from 'react-bootstrap';
-import { signOut } from '@/utils/auth'; // anything in the src dir, you can use the @ instead of relative paths
-import { useAuth } from '@/utils/context/authContext';
+import React, { useEffect, useState } from 'react';
+import EquipmentCard from '@/components/EquipmentCard';
+import EquipmentForm from '@/components/Forms/EquipmentForm';
+import { Container, Row, Col, Button, Offcanvas } from 'react-bootstrap';
+import { getEquipment } from '../api/equipmentData';
 
 function Home() {
-  const { user } = useAuth();
+  const [equipment, setEquipment] = useState([]);
+  const [show, setShow] = useState(false);
+
+  const handleClose = () => setShow(false);
+  const handleShow = () => setShow(true);
+
+  const handleAddEquipment = (newEquipment) => {
+    setEquipment((prevEquipment) => [...prevEquipment, newEquipment]);
+  };
+
+  useEffect(() => {
+    const fetchEquipment = async () => {
+      try {
+        const data = await getEquipment();
+        console.log('Fetched equipment data:', data); // Log the fetched data
+        setEquipment(data);
+      } catch (error) {
+        console.error('Error fetching equipment:', error);
+      }
+    };
+
+    fetchEquipment();
+  }, []);
 
   return (
-    <div
-      className="text-center d-flex flex-column justify-content-center align-content-center"
-      style={{
-        height: '90vh',
-        padding: '30px',
-        maxWidth: '400px',
-        margin: '0 auto',
-      }}
-    >
-      <h1>Hello {user.displayName}! </h1>
-      <p>Click the button below to logout!</p>
-      <Button variant="danger" type="button" size="lg" className="copy-btn" onClick={signOut}>
-        Sign Out
+    <Container className="text-center d-flex flex-column justify-content-center align-content-center" style={{ paddingTop: '5rem', padding: '30px' }}>
+      <Button variant="primary" className="mb-3" style={{ position: 'fixed', top: '13rem', left: '0', transform: 'rotate(-90deg)', transformOrigin: 'left top' }} onClick={handleShow}>
+        Add Equipment
       </Button>
-    </div>
+
+      <Offcanvas show={show} onHide={handleClose} placement="start">
+        <Offcanvas.Header closeButton>
+          <Offcanvas.Title>Menu</Offcanvas.Title>
+        </Offcanvas.Header>
+        <Offcanvas.Body>
+          <EquipmentForm onAddEquipment={handleAddEquipment} onClose={handleClose} />
+        </Offcanvas.Body>
+      </Offcanvas>
+
+      <Row className="justify-content-center">
+        {equipment.length > 0 ? (
+          equipment.map((item) => (
+            <Col key={item.id} xs={12} sm={6} md={4} lg={3} className="d-flex justify-content-center">
+              <EquipmentCard equipObj={item} />
+            </Col>
+          ))
+        ) : (
+          <p>Loading equipment...</p>
+        )}
+      </Row>
+    </Container>
   );
 }
 
